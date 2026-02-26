@@ -22,13 +22,18 @@ import {
   ApexAnnotations,
   ApexAxisChartSeries,
   ApexChart,
+  ApexChartClickEvent,
   ApexDataLabels,
+  ApexDataPointSelectionEvent,
   ApexFill,
   ApexForecastDataPoints,
   ApexGrid,
   ApexLegend,
+  ApexLegendClickEvent,
+  ApexMarkerClickEvent,
   ApexMarkers,
   ApexNoData,
+  ApexOptions,
   ApexParsing,
   ApexNonAxisChartSeries,
   ApexPlotOptions,
@@ -40,6 +45,7 @@ import {
   ApexTooltip,
   ApexXAxis,
   ApexYAxis,
+  ApexZoomedEvent,
 } from "../model/apex-types";
 import type ApexChartsType from "apexcharts";
 
@@ -77,6 +83,11 @@ export class ChartComponent implements OnChanges, OnDestroy {
   readonly autoUpdateSeries = input(true);
 
   readonly chartReady = output<{ chartObj: ApexChartsType }>();
+  readonly dataPointSelection = output<ApexDataPointSelectionEvent>();
+  readonly legendClick = output<ApexLegendClickEvent>();
+  readonly markerClick = output<ApexMarkerClickEvent>();
+  readonly chartClick = output<ApexChartClickEvent>();
+  readonly zoomed = output<ApexZoomedEvent>();
 
   // If consumers need to capture the `chartInstance` for use, consumers
   // can access the component instance through `viewChild` and use `computed`
@@ -176,6 +187,34 @@ export class ChartComponent implements OnChanges, OnDestroy {
         options[property] = value;
       }
     });
+
+    // Merge event outputs into chart events
+    const chartOpts: Record<string, unknown> = (options.chart as Record<string, unknown>) ?? {};
+    const userEvents = (chartOpts['events'] as Record<string, Function>) ?? {};
+    chartOpts['events'] = {
+      ...userEvents,
+      dataPointSelection: (e: Event, _chart: unknown, config: { dataPointIndex: number; seriesIndex: number; w: { config: ApexOptions } }) => {
+        this.dataPointSelection.emit({ event: e, ...config });
+        (userEvents['dataPointSelection'] as Function)?.(e, _chart, config);
+      },
+      legendClick: (_chart: unknown, seriesIndex: number, opts: { w: { config: ApexOptions } }) => {
+        this.legendClick.emit({ seriesIndex, w: opts?.w });
+        (userEvents['legendClick'] as Function)?.(_chart, seriesIndex, opts);
+      },
+      markerClick: (e: Event, _chart: unknown, config: { dataPointIndex: number; seriesIndex: number; w: { config: ApexOptions } }) => {
+        this.markerClick.emit({ event: e, ...config });
+        (userEvents['markerClick'] as Function)?.(e, _chart, config);
+      },
+      click: (e: Event, _chart: unknown, config: { dataPointIndex: number; seriesIndex: number; w: { config: ApexOptions } }) => {
+        this.chartClick.emit({ event: e, ...config });
+        (userEvents['click'] as Function)?.(e, _chart, config);
+      },
+      zoomed: (_chart: unknown, opts: { xaxis: { min: number; max: number }; yaxis?: { min: number; max: number }[] }) => {
+        this.zoomed.emit(opts);
+        (userEvents['zoomed'] as Function)?.(_chart, opts);
+      },
+    };
+    options.chart = chartOpts;
 
     this.destroy();
 

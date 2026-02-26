@@ -1248,3 +1248,35 @@ export type ChartType =
   | "rangeBar"
   | "rangeArea"
   | "treemap";
+
+/** Typed event payloads for Angular output signals */
+export interface ApexDataPointSelectionEvent {
+  event: Event;
+  dataPointIndex: number;
+  seriesIndex: number;
+  w: { config: ApexOptions };
+}
+
+export interface ApexLegendClickEvent {
+  seriesIndex: number;
+  w: { config: ApexOptions };
+}
+
+export interface ApexMarkerClickEvent {
+  event: Event;
+  dataPointIndex: number;
+  seriesIndex: number;
+  w: { config: ApexOptions };
+}
+
+export interface ApexChartClickEvent {
+  event: Event;
+  dataPointIndex: number;
+  seriesIndex: number;
+  w: { config: ApexOptions };
+}
+
+export interface ApexZoomedEvent {
+  xaxis: { min: number; max: number };
+  yaxis?: { min: number; max: number }[];
+}
